@@ -2,7 +2,7 @@
 name: booking-virtual-card-reconciliation
 description: Reconcile Booking.com Extranet virtual cards into Ready to Charge and Refund Due PDF reports. Use for Booking.com VCC reconciliation, cards ready to charge, or refunds due. Read-only; never charges or refunds cards.
 tags: [hotel, booking.com, virtual-cards, reconciliation, browser, accounting]
-version: 1.0.0
+version: 0.2.0
 ---
 
 # Booking.com Virtual Card Reconciliation
@@ -13,7 +13,7 @@ Create a read-only, Booking.com-specific PDF from the Extranet’s Ready to Char
 
 - Credentials enter only through `npm run credentials:setup`, the expiring one-use loopback form. Never ask for them in chat or pass them as arguments.
 - Never read, save, log, report, or return a card number, CVV/CVC, password, MFA/recovery code, cookie, session token, or other payment credential.
-- Guest name, reservation/confirmation number, VCC expiration date, property name, section, row amount, and run date/time are permitted in the final PDF.
+- Reservation number, charge-before date or refund deadline, row amount, refund reason, cardholder, property, section, and run date/time are permitted in the final PDF. Do not open “View card details” or individual reservations.
 - The local credential file is owner-restricted but not encrypted at rest. It lives outside this package at `~/.openclaw/workspace-main/booking-vcc/.credentials.json`, or under `BOOKING_VCC_CONFIG_DIR`.
 - The user completes MFA directly on Booking.com. Never request or observe the code.
 
@@ -31,11 +31,11 @@ If the user names a property, match case-insensitively by exact or partial name 
 
 1. Create a unique owner-restricted run directory and validated `run-context.json`; do not include browser/session data.
 2. Navigate to the Booking.com Extranet virtual-card page through the verified session. Do not rely on a fixed property/account URL when the live Extranet provides navigation.
-3. Load `scripts/browser_extract_vcc.js`. For each property, extract both `ready_to_charge` and `refund_due` independently with `extractDocument(document, SECTION, PAGE_NUMBER)`.
+3. On the Overview tab, call `extractOverviewTotals(document)` and require a displayed total for both sections. `Total amount: US$5,180.12` is valid. A missing total is fatal; never substitute zero. Then open the exact `Virtual cards to charge` and `Virtual cards to refund` tabs with `prepareSection`.
 4. Paginate each section until its Next control is disabled. Refuse repeated signatures and stop at 100 pages. If a whole page is unreadable, reload/revisit and retry it once; after the second failure, append a sanitized `{section,page,error}` page contract and continue to the other pages/section.
 5. Skip an unreadable individual row, continue the page, and retain only its row number plus a sanitized reason in `skippedRecords`.
-6. Capture only guest name, reservation/confirmation number, VCC expiration date, displayed row amount, section, source page, verified property, and run timestamp.
-7. Capture Booking.com’s displayed total for each section. Treat it as the official total. Do not sum rows, recompute totals, or compare row amounts with the displayed total. An empty section must still be represented with its displayed `$0.00` (or equivalent displayed currency text).
+6. Capture only reservation number, charge-before/refund-deadline, displayed row amount, refund reason, cardholder, section, source page, verified property, and run timestamp.
+7. Treat the Overview totals as official. Pass them into every full-list extraction call. Do not sum rows or compare row amounts with totals. Zero is valid only when Booking.com explicitly displays zero.
 8. Save page contracts temporarily as `pages.json`; validate and normalize with `node scripts/reconcile.js pages.json run-context.json reconciliation.json`.
 
 ## PDF and cleanup

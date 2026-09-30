@@ -24,7 +24,8 @@ function requireLoopback(url, protocol) {
   return parsed;
 }
 
-function createTarget(cdpBase = process.env.KOLO_BROWSER_CDP_URL || DEFAULT_CDP_URL) {
+function configuredCdpUrl(){return process.env.KOLO_BROWSER_CDP_URL||process.env.BROWSER_CDP_URL||process.env.CDP_URL||DEFAULT_CDP_URL;}
+function createTarget(cdpBase = configuredCdpUrl()) {
   const base = requireLoopback(cdpBase, "http:");
   const endpoint = new URL(`/json/new?${LOGIN_URL}`, base);
   return new Promise((resolve, reject) => {
@@ -235,7 +236,7 @@ async function login({ storeDir, cdpBase } = {}) {
   }
 }
 
-module.exports = { CdpSession, LoginError, createTarget, inspectPage, fillAndSubmit, login, runLoginFlow };
+module.exports = { CdpSession, LoginError, configuredCdpUrl, createTarget, inspectPage, fillAndSubmit, login, runLoginFlow };
 
 if (require.main === module) {
   if (process.argv.length !== 2) {

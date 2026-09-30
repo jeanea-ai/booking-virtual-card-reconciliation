@@ -1,6 +1,6 @@
 {
   "name": "booking-virtual-card-reconciliation",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "private": true,
   "packageManager": "pnpm@11.19.0",
   "description": "Read-only Booking.com virtual card reconciliation for Kolo with private local credentials and PDF reporting",

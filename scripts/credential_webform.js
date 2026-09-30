@@ -190,7 +190,7 @@ function tokenMatches(submitted, expected) {
   return left.length === right.length && crypto.timingSafeEqual(left, right);
 }
 
-function openSharedBrowser(url, cdpBase = process.env.KOLO_BROWSER_CDP_URL || "http://127.0.0.1:9222") {
+function openSharedBrowser(url, cdpBase = process.env.KOLO_BROWSER_CDP_URL || process.env.BROWSER_CDP_URL || process.env.CDP_URL || "http://127.0.0.1:9222") {
   return new Promise((resolve, reject) => {
     const endpoint = new URL(`${cdpBase.replace(/\/$/, "")}/json/new?${url}`);
     const request = http.request(endpoint, { method: "PUT" }, (response) => {

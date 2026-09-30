@@ -7,10 +7,15 @@ function errors(v){ return (v.errors||[]).map(e=>`${e.instancePath||"/"} ${e.mes
 function reconcile(pages, context) {
   if (!validateRunContext(context)) throw new Error(`Invalid run context: ${errors(validateRunContext)}`);
   if (!Array.isArray(pages) || !pages.length) throw new Error("At least one extracted page is required");
-  const sections = new Set(), totals = {}, records = [], skippedRecords = [], skippedPages = [], warnings = [], signatures = new Set();
+  if (pages.length > 200) throw new Error("Page limit exceeded");
+  const sections = new Set(), totals = {}, records = [], skippedRecords = [], skippedPages = [], warnings = [], signatures = new Set(), lastPage = {};
   for (const page of pages) {
     if (!validateExtractedPage(page)) throw new Error(`Invalid extracted page: ${errors(validateExtractedPage)}`);
     if (page.property.id !== context.expectedProperty.id) throw new Error(`Property mismatch on ${page.section} page ${page.pageNumber}`);
+    if (page.property.name.toLowerCase() !== context.expectedProperty.name.toLowerCase()) throw new Error(`Property name mismatch on ${page.section} page ${page.pageNumber}`);
+    const expectedPage = (lastPage[page.section] || 0) + 1;
+    if (page.pageNumber !== expectedPage) throw new Error(`Unexpected page order for ${page.section}: expected ${expectedPage}, got ${page.pageNumber}`);
+    lastPage[page.section] = page.pageNumber;
     const key = `${page.section}:${page.pagination.signature}`;
     if (signatures.has(key)) throw new Error(`Repeated page detected: ${key}`);
     signatures.add(key); sections.add(page.section);
@@ -23,7 +28,7 @@ function reconcile(pages, context) {
   }
   for (const section of ["ready_to_charge","refund_due"]) {
     if (!sections.has(section)) throw new Error(`Missing required section: ${section}`);
-    if (!totals[section]) totals[section] = "$0.00";
+    if (!totals[section]) throw new Error(`Booking.com displayed total is required for ${section}`);
   }
   const result = {schemaVersion:"1.0.0",runId:context.runId,generatedAt:context.generatedAt,timezone:context.timezone,skillVersion:context.skillVersion,property:context.expectedProperty,status:(skippedRecords.length||skippedPages.length)?"complete_with_skips":"complete",officialTotals:{ready_to_charge:totals.ready_to_charge,refund_due:totals.refund_due},records,skippedRecords,skippedPages,warnings};
   if (!validateReconciliationResult(result)) throw new Error(`Invalid reconciliation result: ${errors(validateReconciliationResult)}`);
