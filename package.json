@@ -1,0 +1,27 @@
+{
+  "name": "booking-virtual-card-reconciliation",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "description": "Read-only Booking.com virtual card reconciliation for Kolo with private local credentials and PDF reporting",
+  "type": "commonjs",
+  "scripts": {
+    "build:schemas": "node scripts/compile_schemas.js",
+    "credentials:setup": "node scripts/credential_webform.js capture",
+    "credentials:check": "node scripts/credential_webform.js check",
+    "test": "node scripts/compile_schemas.js && node --test tests/booking-core.test.js tests/booking-browser.test.js tests/booking-security.test.js",
+    "login:local": "node scripts/login_local.js",
+    "reconcile": "node scripts/reconcile.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "ajv-formats": "^3.0.1",
+    "linkedom": "^0.18.13"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ws": "^8.22.0"
+  }
+}

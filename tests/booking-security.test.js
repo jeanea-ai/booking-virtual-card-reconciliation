@@ -1,0 +1,6 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
+const {writeCredentials,readCredentials,checkCredentials,removeCredentials}=require("../scripts/credential_webform");
+const {runLoginFlow}=require("../scripts/login_local");
+test("credential store exposes status but not values",()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),"booking-vcc-test-"));try{writeCredentials({username:"synthetic@example.invalid",password:"not-a-real-password",storeDir:dir});assert.equal(checkCredentials({storeDir:dir}).passwordConfigured,true);assert.equal(JSON.stringify(checkCredentials({storeDir:dir})).includes("not-a-real-password"),false);assert.equal(readCredentials({storeDir:dir}).username,"synthetic@example.invalid");removeCredentials({storeDir:dir});}finally{fs.rmSync(dir,{recursive:true,force:true});}});
+test("login flow returns MFA status without returning secrets",async()=>{let stage="username";const session={evaluate:async(fn,payload)=>{if(fn.name==="inspectPage")return{stage};stage=payload.kind==="username"?"password":"mfa";return true;}};const result=await runLoginFlow(session,{username:"synthetic@example.invalid",password:"not-a-real-password"});assert.equal(result,"mfa_required");assert.equal(JSON.stringify(result).includes("not-a-real-password"),false);});
